@@ -35,7 +35,7 @@ import Control.Parallel.Strategies
 import Data.Vector as V
 import Data.Vector.Strategies
 import Diagrams.Core.Types
-import Data.Typeable.Internal
+import Data.Typeable
 import Data.MonoTraversable
 
 data RingZipper a = RingZipper {
@@ -79,13 +79,13 @@ shiftLeft z = RingZipper {
     where
         merged = mergeRingZipper z
         focusAt' = (focusIndexRingZipper z - 1) `mod` (V.length merged)
-        
+
         focus' = merged V.! focusAt'
-        before' =   
+        before' =
             if V.null (before z)
                 then V.init merged
                 else V.init (before z)
-        after' = 
+        after' =
             if V.null (before z)
                 then V.empty
                 else V.cons (focus z) (Cellular.after z)
@@ -100,13 +100,13 @@ shiftRight z = RingZipper {
     where
         merged  = mergeRingZipper z
         focusAt' = (focusIndexRingZipper z + 1) `mod` (V.length merged)
-        
+
         focus' = merged V.! focusAt'
-        before' =   
+        before' =
             if V.null (Cellular.after z)
                 then empty
                 else V.snoc (before z) (focus z)
-        after' = 
+        after' =
             if V.null (Cellular.after z)
                 then V.tail merged
                 else V.tail (Cellular.after z)
@@ -176,8 +176,8 @@ instance Comonad Univ where
             after = innerAfters u
 
         }
-        outerBefores x = V.reverse $ V.iterateN outerFocusAt (fmap shiftUpUniv) (fmap shiftUpUniv x) 
-        outerAfters x = V.iterateN (outerLength - outerFocusAt - 1) (fmap shiftDownUniv) (fmap shiftDownUniv x) 
+        outerBefores x = V.reverse $ V.iterateN outerFocusAt (fmap shiftUpUniv) (fmap shiftUpUniv x)
+        outerAfters x = V.iterateN (outerLength - outerFocusAt - 1) (fmap shiftDownUniv) (fmap shiftDownUniv x)
 
         innerBefores x = V.reverse $ V.iterateN innerFocusAt shiftLeftUniv (shiftLeftUniv x)
         innerAfters x = V.iterateN (innerLength - innerFocusAt - 1) shiftRightUniv (shiftRightUniv x)
@@ -185,7 +185,7 @@ instance Comonad Univ where
         outerFocusAt = focusIndexRingZipper univ
         outerLength = lengthRingZipper univ
 
-        innerFocusAt = focusIndexRingZipper $ extract univ 
+        innerFocusAt = focusIndexRingZipper $ extract univ
         innerLength = lengthRingZipper $ extract univ
 
 type Dim = Int
@@ -198,7 +198,7 @@ makeRingZipperM n f = do
     after <- V.generateM (n - mid + 1) (\x -> f (x + mid))
     focus <- f mid
     return $ RingZipper {
-        before=before, 
+        before=before,
         focus=focus,
         after=after
     }
@@ -230,7 +230,7 @@ getUnivNeighbours univ = V.fromList $
 -- TODO: use GHC generics to auto derive mono instances
 
 
-type CADiagramBackend b = (Data.Typeable.Internal.Typeable (N b), RealFloat (N b), Backend b V2 (N b), Renderable (Path V2 (N b)) b)
+type CADiagramBackend b = (Typeable (N b), RealFloat (N b), Backend b V2 (N b), Renderable (Path V2 (N b)) b)
 
 class MonoComonad u => CA u where
   renderCA :: CADiagramBackend b => u -> QDiagram b V2 (N b) Any
@@ -257,7 +257,7 @@ mkCAGif seed n = V.toList $ V.zip renderedSteps frameDurations where
 
 
 -- | compose the states of the cellular automata into a image by stacking
--- | states vertically. 
+-- | states vertically.
 mkCAImage :: (CA u, CADiagramBackend b) => u -> Steps -> QDiagram b V2 (N b) Any
 mkCAImage seed n = vcat (V.toList renderedSteps)  where
     renderedSteps = fmap renderCA (casteps `using` parTraversable rseq)

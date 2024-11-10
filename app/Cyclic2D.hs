@@ -11,7 +11,6 @@ import Diagrams.TwoD.Layout.Grid
 import Control.Monad
 import Data.Active
 import qualified Data.Vector as V
-import Data.Typeable.Internal
 import Data.MonoTraversable
 import DeriveMonoComonadTH
 
@@ -28,7 +27,7 @@ stepCell :: Cyclic2D -> Cell
 stepCell (Cyclic2D s) =
     cell'
     where
-        cell = extract s 
+        cell = extract s
         cell' = if hasNextNeighbour (getUnivNeighbours s)
            then Cell { val = (val cell + 1) `mod` (total cell), total = total cell}
            else cell
