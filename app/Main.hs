@@ -32,6 +32,7 @@ import Data.Colour.SRGB (sRGB)  -- Import sRGB to construct RGB color
 
 -- Define a foreign export function named 'generate'
 foreign export ccall generate :: CInt -> CInt -> CString -> IO CInt
+foreign export ccall generateB :: CInt -> CInt -> CString -> IO CInt
 
 generate :: CInt -> CInt -> CString -> IO CInt
 generate h w o = do
@@ -64,6 +65,40 @@ generate h w o = do
 
     -- Return 0 to indicate success
     return 0
+
+generateB :: CInt -> CInt -> CString -> IO CInt
+generateB h w o = do
+    -- Convert the CString to a Haskell String
+    outputFile <- peekCString o
+
+    -- Convert CInt to Int for height and width
+    let height = fromIntegral h :: Int
+    let width = fromIntegral w :: Int
+
+    -- Debugging: print the parameters
+    putStrLn $ "Generating diagram with height: " ++ show height ++ ", width: " ++ show width
+    putStrLn $ "Output file: " ++ outputFile
+
+    let renderOpts :: FilePath -> (DiagramOpts, GifOpts) --MainOpts [(QDiagram Rasterific V2 n Any, Int)]
+        renderOpts outpath = let
+                  diagramOpts = DiagramOpts { _width = Just 128, _height = Just 128, _output = outpath }
+                  gifOpts = GifOpts {_dither = False, _noLooping = False, _loopRepeat = Nothing}
+                 in (diagramOpts, gifOpts)
+
+    let caGifMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
+        caGifMain outpath iostart nsteps = do
+          start <- iostart
+          gifMain $ (mkCAGif start nsteps)
+        -- mainRender ((renderOpts outpath) :: MainOpts [(QDiagram Rasterific V2 n Any, Int)]) (mkCAGif start nsteps)
+        --
+    let caImageMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
+        caImageMain outpath iostart nsteps = do
+          start <- iostart
+          defaultMain $ (mkCAImage start nsteps)
+
+    -- Return 0 to indicate success
+    return 0
+
 
 
 -- mkCAGifRasterific :: CA u => u -> Steps -> [(QDiagram Rasterific V2 n  Any, Int)]
