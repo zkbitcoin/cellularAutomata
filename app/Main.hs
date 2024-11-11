@@ -17,21 +17,63 @@ import Data.Monoid (Any)
 import qualified GameOfLife
 import qualified Seeds
 import qualified BriansBrain
-import qualified Cyclic1D 
-import qualified Cyclic2D 
-import qualified Heat1D 
+import qualified Cyclic1D
+import qualified Cyclic2D
+import qualified Heat1D
 import qualified Rule
 import System.Random
+
+
+import Foreign.C
+import Foreign
+import Diagrams.Prelude
+import Data.Colour.SRGB (sRGB)  -- Import sRGB to construct RGB color
+
+
+-- Define a foreign export function named 'generate'
+foreign export ccall generate :: CInt -> CInt -> CString -> IO CInt
+
+generate :: CInt -> CInt -> CString -> IO CInt
+generate h w o = do
+    -- Convert the CString to a Haskell String
+    outputFile <- peekCString o
+
+    -- Convert CInt to Int for height and width
+    let height = fromIntegral h :: Int
+        width = fromIntegral w :: Int
+
+    -- Debugging: print the parameters
+    putStrLn $ "Generating diagram with height: " ++ show height ++ ", width: " ++ show width
+    putStrLn $ "Output file: " ++ outputFile
+
+    -- Define a simple diagram for demonstration
+    let diagram :: Diagram B
+        diagram = rect (fromIntegral width) (fromIntegral height)
+                    # fc (sRGB 0 0 1)  -- Example: a blue rectangle (RGB(0, 0, 1))
+
+    -- Set up the backend rendering options
+    let renderOpts :: FilePath -> DiagramOpts
+        renderOpts outpath = DiagramOpts { _width = Just width, _height = Just height, _output = outpath }
+
+    -- Create the SizeSpec (width and height) for rendering, convert to Double
+    let sizeSpec = mkSizeSpec2D (Just $ fromIntegral width) (Just $ fromIntegral height)
+
+    -- Render the diagram using the Rasterific backend
+    putStrLn "Rendering the diagram..."
+    renderRasterific outputFile sizeSpec diagram
+
+    -- Return 0 to indicate success
+    return 0
 
 
 -- mkCAGifRasterific :: CA u => u -> Steps -> [(QDiagram Rasterific V2 n  Any, Int)]
 -- mkCAGifRasterific = mkCAGif
 
 renderOpts :: FilePath -> (DiagramOpts, GifOpts) --MainOpts [(QDiagram Rasterific V2 n Any, Int)]
-renderOpts outpath = let 
+renderOpts outpath = let
               diagramOpts = DiagramOpts { _width = Just 128, _height = Just 128, _output = outpath }
               gifOpts = GifOpts {_dither = False, _noLooping = False, _loopRepeat = Nothing}
-             in (diagramOpts, gifOpts) 
+             in (diagramOpts, gifOpts)
 
 caGifMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
 caGifMain outpath iostart nsteps = do
@@ -58,7 +100,7 @@ golGenerator = do
 golStartGrid :: IO (GameOfLife.GameOfLife)
 golStartGrid = do
     univ <- makeUnivM golDim (const . const $ golGenerator)
-    return $ GameOfLife.GameOfLife univ  
+    return $ GameOfLife.GameOfLife univ
 
 
 golMain = caGifMain "gameoflife.gif" golStartGrid 100
@@ -78,7 +120,7 @@ briansGenerator = do
               1 -> BriansBrain.Off
               2 -> BriansBrain.Off
               3 -> BriansBrain.Off
-  
+
   return cell
 
 briansStartGrid :: IO (BriansBrain.BriansBrain)
@@ -178,7 +220,7 @@ ruleStartGridNotAtCenter ruleix = do
 
 ruleRandomInit :: Int -> IO (Rule.Rule)
 ruleRandomInit ruleix = do
-  rz <-  makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> randbool) 
+  rz <-  makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> randbool)
   return $ Rule.Rule rz
 
 -- generate 1 with `bias` probability and `0` with (1 - bias) probability
@@ -190,7 +232,7 @@ randBoolBiased b = do
 -- create the rule CA iniitialized with a random ratio
 ruleRandomInitRatio :: Float -> Int -> IO (Rule.Rule)
 ruleRandomInitRatio b ruleix = do
-  rz <-  makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> (randBoolBiased b)) 
+  rz <-  makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> (randBoolBiased b))
   return $ Rule.Rule rz
 
 rule184AtCenterMain = caImageMain "rule184.jpeg" (ruleStartGridAtCenter 184) 10
