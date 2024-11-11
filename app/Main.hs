@@ -34,8 +34,8 @@ import Data.Colour.SRGB (sRGB)  -- Import sRGB to construct RGB color
 foreign export ccall generate :: CInt -> CInt -> CString -> IO CInt
 foreign export ccall generateB :: CInt -> CInt -> CString -> IO CInt
 
-generate :: CInt -> CInt -> CString -> IO CInt
-generate h w o = do
+generateB :: CInt -> CInt -> CString -> IO CInt
+generateB h w o = do
     -- Convert the CString to a Haskell String
     outputFile <- peekCString o
 
@@ -66,8 +66,8 @@ generate h w o = do
     -- Return 0 to indicate success
     return 0
 
-generateB :: CInt -> CInt -> CString -> IO CInt
-generateB h w o = do
+generate :: CInt -> CInt -> CString -> IO CInt
+generate h w o = do
     -- Convert the CString to a Haskell String
     outputFile <- peekCString o
 
@@ -89,12 +89,14 @@ generateB h w o = do
         caGifMain outpath iostart nsteps = do
           start <- iostart
           gifMain $ (mkCAGif start nsteps)
-        -- mainRender ((renderOpts outpath) :: MainOpts [(QDiagram Rasterific V2 n Any, Int)]) (mkCAGif start nsteps)
-        --
+          -- mainRender ((renderOpts outpath) :: MainOpts [(QDiagram Rasterific V2 n Any, Int)]) (mkCAGif start nsteps)
+
     let caImageMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
         caImageMain outpath iostart nsteps = do
           start <- iostart
           defaultMain $ (mkCAImage start nsteps)
+
+    let main = rule90Random
 
     -- Return 0 to indicate success
     return 0
