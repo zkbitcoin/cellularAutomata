@@ -37,6 +37,7 @@ import Data.Vector.Strategies
 import Diagrams.Core.Types
 import Data.Typeable
 import Data.MonoTraversable
+import Diagrams.Backend.Rasterific
 
 data RingZipper a = RingZipper {
     before :: V.Vector a,
@@ -249,7 +250,15 @@ ringZipperToDiagram  cellToDiagram r = L.foldr1 (|||) (V.toList $ fmap cellToDia
 type GifDelay = Int
 
 -- | Compose the states of the cellular automata into a gif
-mkCAGif :: (CA u, CADiagramBackend b) => u -> Steps -> [(QDiagram b V2 (N b) Any, GifDelay)]
+--mkCAGif :: (CA u, CADiagramBackend b) => u -> Steps -> [(QDiagram b V2 (N b) Any, GifDelay)]
+--mkCAGif seed n = V.toList $ V.zip renderedSteps frameDurations where
+--    renderedSteps = fmap renderCA (casteps `using` parTraversable rseq)
+--    frameDurations = V.replicate n  (5 :: Int)
+--    casteps = V.iterateN n (\u -> oextend stepCell u) seed
+
+
+-- | Compose the states of the cellular automata into a gif
+mkCAGif :: CA u => u -> Steps -> [(QDiagram Rasterific V2 (N Rasterific) Any, Int)]
 mkCAGif seed n = V.toList $ V.zip renderedSteps frameDurations where
     renderedSteps = fmap renderCA (casteps `using` parTraversable rseq)
     frameDurations = V.replicate n  (5 :: Int)

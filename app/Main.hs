@@ -79,6 +79,7 @@ generate h w o = do
     putStrLn $ "Generating diagram with height: " ++ show height ++ ", width: " ++ show width
     putStrLn $ "Output file: " ++ outputFile
 
+
     let renderOpts :: FilePath -> (DiagramOpts, GifOpts) --MainOpts [(QDiagram Rasterific V2 n Any, Int)]
         renderOpts outpath = let
                   diagramOpts = DiagramOpts { _width = Just 128, _height = Just 128, _output = outpath }
@@ -88,8 +89,8 @@ generate h w o = do
     let caGifMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
         caGifMain outpath iostart nsteps = do
           start <- iostart
-          gifMain $ (mkCAGif start nsteps)
-          -- mainRender ((renderOpts outpath) :: MainOpts [(QDiagram Rasterific V2 n Any, Int)]) (mkCAGif start nsteps)
+          -- gifMain $ (mkCAGif start nsteps)
+          mainRender ((renderOpts outpath) :: MainOpts [(QDiagram Rasterific V2 n Any, Int)]) (mkCAGif start nsteps)
 
     let caImageMain :: CA ca => FilePath -> IO ca -> Steps -> IO ()
         caImageMain outpath iostart nsteps = do
@@ -100,8 +101,6 @@ generate h w o = do
 
     -- Return 0 to indicate success
     return 0
-
-
 
 -- mkCAGifRasterific :: CA u => u -> Steps -> [(QDiagram Rasterific V2 n  Any, Int)]
 -- mkCAGifRasterific = mkCAGif
