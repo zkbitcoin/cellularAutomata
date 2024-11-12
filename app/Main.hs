@@ -81,7 +81,7 @@ generate h w o = do
 
     let renderOpts :: FilePath -> (DiagramOpts, GifOpts) --MainOpts [(QDiagram Rasterific V2 n Any, Int)]
         renderOpts outpath = let
-                  diagramOpts = DiagramOpts { _width = Just width, _height = Just height, _output = outpath }
+                  diagramOpts = DiagramOpts { _width = Just width, _height = Just height, _output = outputFile }
                   gifOpts = GifOpts {_dither = False, _noLooping = False, _loopRepeat = Nothing}
                  in (diagramOpts, gifOpts)
 
@@ -94,7 +94,7 @@ generate h w o = do
         caImageMain outpath iostart nsteps = do
             start <- iostart
             let diagram = mkCAImage start nsteps
-            let sizeSpec = mkWidth 800  -- Width of 800 pixels
+            let sizeSpec = dims2D (fromIntegral width) (fromIntegral height)
             renderRasterific outpath sizeSpec diagram
 
     -- Game of Life
@@ -112,6 +112,6 @@ generate h w o = do
           univ <- makeUnivM golDim (const . const $ golGenerator)
           return $ GameOfLife.GameOfLife univ
 
-    caGifMain "gameoflife.gif" golStartGrid 100
+    caGifMain outputFile golStartGrid 100
 
     return 0
