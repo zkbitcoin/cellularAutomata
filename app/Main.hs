@@ -31,11 +31,11 @@ import Data.Colour.SRGB (sRGB)  -- Import sRGB to construct RGB color
 
 
 -- Define a foreign export function named 'generate'
+foreign export ccall test :: CInt -> CInt -> CString -> IO CInt
 foreign export ccall generate :: CInt -> CInt -> CString -> IO CInt
-foreign export ccall generateB :: CInt -> CInt -> CString -> IO CInt
 
-generateB :: CInt -> CInt -> CString -> IO CInt
-generateB h w o = do
+test :: CInt -> CInt -> CString -> IO CInt
+test h w o = do
     -- Convert the CString to a Haskell String
     outputFile <- peekCString o
 
