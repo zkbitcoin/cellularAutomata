@@ -98,18 +98,26 @@ generate c h w o = do
 
     case caType of
         "gol" -> do
-            -- Call the Game of Life generator and rendering function
             putStrLn "Generating Game of Life GIF..."
             generateGolGif caGifMain outputFile
             putStrLn "Finished Generating Game of Life GIF..."
+            return 0
+        "bb" -> do
+            putStrLn "Generating Brians Brain GIF..."
+            generateBriansBrainGif caGifMain outputFile
+            putStrLn "Finished Generating Brians Brain GIF..."
+            return 0
+        "c1d" -> do
+            putStrLn "Generating Cyclic 1D GIF..."
+            generateCyclic1dGif caGifMain outputFile
+            putStrLn "Finished Generating Cyclic 1..."
             return 0  -- Successful execution
         _ -> do
             putStrLn $ "Unknown type: " ++ caType
-            return 1  -- Return 1 for failure or unknown type
+            return 1
 
     return 0
 
--- Game of Life generator and GIF rendering function
 generateGolGif :: (FilePath -> IO GameOfLife.GameOfLife -> Steps -> IO ()) -> FilePath -> IO ()
 generateGolGif caGifMain outputFile = do
     let golDim = 20
@@ -126,3 +134,46 @@ generateGolGif caGifMain outputFile = do
 
     -- Call caGifMain passed as argument
     caGifMain outputFile golStartGrid 10
+
+
+generateBriansBrainGif :: (FilePath -> IO BriansBrain.BriansBrain -> Steps -> IO ()) -> FilePath -> IO ()
+generateBriansBrainGif caGifMain outputFile = do
+    let briansDim = 20
+
+    let briansGenerator :: IO BriansBrain.Cell
+        briansGenerator = do
+          newStdGen
+          val <- getStdRandom (randomR (0, 3)) :: IO Int
+          let cell = case val of
+                      0 -> BriansBrain.On
+                      1 -> BriansBrain.Off
+                      2 -> BriansBrain.Off
+                      3 -> BriansBrain.Off
+
+          return cell
+
+    let briansStartGrid :: IO (BriansBrain.BriansBrain)
+        briansStartGrid = do
+          univ <- makeUnivM briansDim (const . const $ briansGenerator)
+          return $ BriansBrain.BriansBrain univ
+
+    caGifMain outputFile briansStartGrid 10
+
+generateCyclic1dGif :: (FilePath -> IO Cyclic1D.Cyclic1D -> Steps -> IO ()) -> FilePath -> IO ()
+generateCyclic1dGif caGifMain outputFile = do
+
+    let cyclic1dDim = 20
+    let cyclic1dTypes = 4
+
+    let cyclic1dGenerator :: IO Cyclic1D.Cell
+        cyclic1dGenerator = do
+          newStdGen
+          val <- getStdRandom (randomR (0, cyclic1dTypes)) :: IO Int
+          return $ Cyclic1D.Cell val cyclic1dTypes
+
+    let cyclic1dStartGrid :: IO (Cyclic1D.Cyclic1D)
+        cyclic1dStartGrid = do
+          rz <- makeRingZipperM cyclic1dDim (const $ cyclic1dGenerator)
+          return $ Cyclic1D.Cyclic1D rz
+
+    caGifMain outputFile cyclic1dStartGrid 10
