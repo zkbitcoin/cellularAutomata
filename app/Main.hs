@@ -125,4 +125,4 @@ generateGolGif caGifMain outputFile = do
           return $ GameOfLife.GameOfLife univ
 
     -- Call caGifMain passed as argument
-    caGifMain outputFile golStartGrid 100
+    caGifMain outputFile golStartGrid 10
