@@ -109,9 +109,51 @@ generate c h w o = do
             return 0
         "c1d" -> do
             putStrLn "Generating Cyclic 1D GIF..."
-            generateCyclic1dGif caGifMain outputFile
-            putStrLn "Finished Generating Cyclic 1..."
-            return 0  -- Successful execution
+            generateCyclic1DGif caGifMain outputFile
+            putStrLn "Finished Generating Cyclic 1D GIF..."
+            return 0
+        "c2d" -> do
+            putStrLn "Generating Cyclic 2D GIF..."
+            generateCyclic2DGif caGifMain outputFile
+            putStrLn "Finished Generating Cyclic 2D GIF..."
+            return 0
+        "heat1d" -> do
+            putStrLn "Generating Heat 1D GIF..."
+            generateHeat1DGif caGifMain outputFile
+            putStrLn "Finished Generating Heat 1D GIF..."
+            return 0
+        -- New rule cases
+        "rule184AtCenterMain" -> do
+            putStrLn "Generating rule184AtCenterMain JPG..."
+            generateRuleImage caImageMain outputFile "rule184AtCenterMain"
+            putStrLn "Finished Generating rule184AtCenterMain JPG..."
+            return 0
+        "rule184NotAtCenterMain" -> do
+            putStrLn "Generating rule184NotAtCenterMain JPG..."
+            generateRuleImage caImageMain outputFile "rule184NotAtCenterMain"
+            putStrLn "Finished Generating rule184NotAtCenterMain JPG..."
+            return 0
+        "rule184BiasPoint2" -> do
+            putStrLn "Generating rule184BiasPoint2 JPG..."
+            generateRuleImage caImageMain outputFile "rule184BiasPoint2"
+            putStrLn "Finished Generating rule184BiasPoint2 JPGF..."
+            return 0
+        "rule184BiasPoint8" -> do
+            putStrLn "Generating rule184BiasPoint8 JPG..."
+            generateRuleImage caImageMain outputFile "rule184BiasPoint8"
+            putStrLn "Finished Generating rule184BiasPoint8 JPG..."
+            return 0
+        "rule90FromCenter" -> do
+            putStrLn "Generating rule90FromCenter JPG..."
+            generateRuleImage caImageMain outputFile "rule90FromCenter"
+            putStrLn "Finished Generating rule90FromCenter JPG..."
+            return 0
+        "rule90Random" -> do
+            putStrLn "Generating rule90Random JPG..."
+            generateRuleImage caImageMain outputFile "rule90Random"
+            putStrLn "Finished Generating rule90Random JPG..."
+            return 0
+        -- Default case for unknown caType
         _ -> do
             putStrLn $ "Unknown type: " ++ caType
             return 1
@@ -159,8 +201,8 @@ generateBriansBrainGif caGifMain outputFile = do
 
     caGifMain outputFile briansStartGrid 10
 
-generateCyclic1dGif :: (FilePath -> IO Cyclic1D.Cyclic1D -> Steps -> IO ()) -> FilePath -> IO ()
-generateCyclic1dGif caGifMain outputFile = do
+generateCyclic1DGif :: (FilePath -> IO Cyclic1D.Cyclic1D -> Steps -> IO ()) -> FilePath -> IO ()
+generateCyclic1DGif caGifMain outputFile = do
 
     let cyclic1dDim = 20
     let cyclic1dTypes = 4
@@ -177,3 +219,114 @@ generateCyclic1dGif caGifMain outputFile = do
           return $ Cyclic1D.Cyclic1D rz
 
     caGifMain outputFile cyclic1dStartGrid 10
+
+
+generateCyclic2DGif :: (FilePath -> IO Cyclic2D.Cyclic2D -> Steps -> IO ()) -> FilePath -> IO ()
+generateCyclic2DGif caGifMain outputFile = do
+
+    let cyclic2dDim = 30
+    let cyclic2DTypes = 15
+
+    let cyclic2DGenerator :: IO Cyclic2D.Cell
+        cyclic2DGenerator = do
+          val <- getStdRandom (randomR (0, cyclic2DTypes - 1))
+          return $ Cyclic2D.Cell {
+            Cyclic2D.total=cyclic2DTypes,
+            Cyclic2D.val=val
+          }
+
+    let cyclic2DStartGrid :: IO (Cyclic2D.Cyclic2D)
+        cyclic2DStartGrid = do
+          univ <-  makeUnivM cyclic2dDim  (const . const $ cyclic2DGenerator)
+          return $ Cyclic2D.Cyclic2D univ
+
+    caGifMain outputFile cyclic2DStartGrid 10
+
+
+generateHeat1DGif :: (FilePath -> IO Heat1D.Heat1D -> Steps -> IO ()) -> FilePath -> IO ()
+generateHeat1DGif caGifMain outputFile = do
+
+    let heat1dDim = 100
+
+    {-
+    heat1dGenerator :: IO Heat1D.Cell
+    heat1dGenerator = do
+      newStdGen
+      val <- getStdRandom (randomR (0, cyclic1dTypes)) :: IO Float
+      return $ Heat1D.Cell val
+    -}
+
+    let clampHeat :: Float -> Float
+        clampHeat x = min (max x 0) 1
+
+    let heatfn :: Int -> Float
+        heatfn x = normx
+              where
+                normx = (fromIntegral x) / (fromIntegral heat1dDim)
+
+    let heat1dStartGrid :: IO (Heat1D.Heat1D)
+        heat1dStartGrid = do
+          let rz = makeRingZipper heat1dDim (Heat1D.Cell . clampHeat . heatfn)
+          return $ Heat1D.Heat1D rz
+
+    caGifMain outputFile heat1dStartGrid 100
+
+generateRuleImage :: (FilePath -> IO Rule.Rule -> Steps -> IO ()) -> FilePath -> String -> IO ()
+generateRuleImage caImageMain outputFile ruleType = do
+
+    let ruledim = 100  -- Grid dimension
+
+    -- Generates a random boolean value
+    let randbool :: IO Bool
+        randbool = randomIO
+
+    -- Initialize grid with rule index at the center
+    let ruleStartGridAtCenter :: Int -> IO Rule.Rule
+        ruleStartGridAtCenter ruleix = do
+            let rz = makeRingZipper ruledim (\i -> Rule.Cell ruleix (i * 2 == ruledim))
+            return $ Rule.Rule rz
+
+    -- Initialize grid with rule index not at the center
+    let ruleStartGridNotAtCenter :: Int -> IO Rule.Rule
+        ruleStartGridNotAtCenter ruleix = do
+            let rz = makeRingZipper ruledim (\i -> Rule.Cell ruleix (i * 2 /= ruledim))
+            return $ Rule.Rule rz
+
+    -- Initialize grid with a random boolean value
+    let ruleRandomInit :: Int -> IO Rule.Rule
+        ruleRandomInit ruleix = do
+            rz <- makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> randbool)
+            return $ Rule.Rule rz
+
+    -- Generate a random boolean with a bias towards 'b'
+    let randBoolBiased :: Float -> IO Bool
+        randBoolBiased b = do
+            p <- randomIO
+            return $ p <= b
+
+    -- Initialize grid with a random boolean, biased by a given ratio
+    let ruleRandomInitRatio :: Float -> Int -> IO Rule.Rule
+        ruleRandomInitRatio b ruleix = do
+            rz <- makeRingZipperM ruledim (\i -> Rule.Cell <$> pure ruleix <*> randBoolBiased b)
+            return $ Rule.Rule rz
+
+    case ruleType of
+        "rule184AtCenterMain" -> do
+            caImageMain outputFile (ruleStartGridAtCenter 184) 10
+        "rule184NotAtCenterMain" -> do
+            caImageMain outputFile (ruleStartGridNotAtCenter 184) 10
+        "rule184BiasPoint2" -> do
+            caImageMain outputFile (ruleRandomInitRatio 0.2 184) 10
+        "rule184BiasPoint8" -> do
+            caImageMain outputFile (ruleRandomInitRatio 0.8 184) 10
+        "rule90FromCenter" -> do
+            caImageMain outputFile (ruleStartGridAtCenter 90) 20
+        "rule90Random" -> do
+            caImageMain outputFile (ruleRandomInitRatio 0.2 90) 20
+        -- Default case if no match found
+        _ -> do
+            putStrLn "Invalid ruleType. Please provide a valid ruleType."
+            return ()
+
+
+

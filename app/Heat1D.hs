@@ -27,21 +27,30 @@ instance CA Heat1D where
 
 
 
-tracestr :: Float -> V.Vector Float -> String
-tracestr me neigh = "|" <> (show (neigh V.! 0)) <> " | " <> (show me) <> " | " <> (show (neigh V.! 1)) <> "|\n"
+--tracestr :: Float -> V.Vector Float -> String
+--tracestr me neigh = "|" <> (show (neigh V.! 0)) <> " | " <> (show me) <> " | " <> (show (neigh V.! 1)) <> "|\n"
+
+--evolve :: Float -> V.Vector Float -> Float
+--evolve me neighbour = Trace.trace (tracestr me neighbour)
+--                    (me + kappa * deltat * (((neighbour V.! 1) - 2.0 * me + (neighbour V.! 0)) / deltax ** 2)) where
+--  deltax = 1.0 / 20.0
+--  kappa = 0.01
+--  deltat = 1.0
+
 
 evolve :: Float -> V.Vector Float -> Float
-evolve me neighbour = Trace.trace (tracestr me neighbour) 
-                    (me + kappa * deltat * (((neighbour V.! 1) - 2.0 * me + (neighbour V.! 0)) / deltax ** 2)) where
-  deltax = 1.0 / 20.0
-  kappa = 0.01
-  deltat = 1.0
+evolve me neighbour =
+    me + kappa * deltat * (((neighbour V.! 1) - 2.0 * me + (neighbour V.! 0)) / deltax ** 2)
+  where
+    deltax = 1.0 / 20.0
+    kappa = 0.01
+    deltat = 1.0
 
 stepCell :: Heat1D -> Cell
 stepCell (Heat1D s) =
     cell'
     where
-        cell = extract s 
+        cell = extract s
         cell' = Cell (evolve (heat cell) (fmap heat neighbours))
         neighbours = getRingZipperNeighbours s
 
